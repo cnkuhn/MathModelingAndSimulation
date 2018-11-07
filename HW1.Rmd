@@ -1,0 +1,98 @@
+---
+title: "HW1"
+author: "Corey Kuhn"
+date: "1/22/2018"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Chapter 3, Exercise 2
+
+```{r}
+h <- function(x,n){
+  vec <- c(1)
+  for(i in 1:n){
+    vec[i+1] <- x^i
+  }
+  sum(vec)
+}
+# Example w/ x=2, n=3
+x <- 2
+n <- 3
+1+x+x^2+x^3
+h(2,3)
+```
+
+## Chapter 3, Exercise 7
+
+To find the sum of every third element of a defined vector x (containing 3 elements or more), you could run the following line of code:
+
+`sum(x[seq(3,length(x),3)])`
+
+## Chapter 3, Exercise 10
+
+```{r}
+mm <- function(x){
+  x.min <- x[1]
+for(i in 2:length(x)){
+  if (x[i] < x.min){
+    x.min <- x[i]
+  }
+}
+x.min
+}
+# Example
+x <- c(5,89,6,8,76,54,4,32)
+mm(x)
+```
+
+## Chapter 3, Exercise 12
+
+```{r}
+# If the sum of the first roll x is 7 or 11, the function returns the value of x 
+# and the result of the game (in this instance, a win).
+# If the sum of the first roll x is not 7 or 11, the function returns the value of x, 
+# the value of the sum of the next roll (equaling x, 7, or 11), and the result of the 
+# game (win or lose).
+craps <- function(x){
+  if(x %in% c(7,11)){
+    result <- "WIN!"
+  }else{
+    next_roll <- sum(ceiling(6*runif(2)))
+    while(!(next_roll %in% c(x,7,11))){
+      next_roll <- sum(ceiling(6*runif(2)))
+    }
+    if(next_roll==x){
+      result <- "WIN!"
+    }else{ # next_roll is 7 or 11
+      result <- "LOSE!"
+    }
+  }
+  if(!(x %in% c(7,11))){
+    return(c(x,next_roll,result))
+  }else{
+      return(c(x,result))
+  }
+}
+# Examples
+set.seed(12)
+craps(sum(ceiling(6*runif(2))))
+set.seed(23)
+craps(sum(ceiling(6*runif(2))))
+set.seed(34)
+craps(sum(ceiling(6*runif(2))))
+```
+
+## Chapter 3, Exercise 13
+
+```{r, fig.height = 5, fig.width = 5}
+t <- seq(0,10,.01)
+polar.x <- sqrt(t)
+polar.y <- 2*pi*t
+rec.x <- polar.x*cos(polar.y)
+rec.y <- polar.x*sin(polar.y)
+plot(rec.x,rec.y,type="l",main="Figure 3.3")
+```
