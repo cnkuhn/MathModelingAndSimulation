@@ -1,0 +1,192 @@
+---
+title: "HW2"
+author: "Corey Kuhn"
+date: "2/7/2018"
+output: pdf_document
+---
+
+\newcommand{\newprob}
+    {
+    \vskip 1cm
+    }
+\newcommand{\newln}
+    {
+    \vskip .1cm
+    }
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(knitr)
+opts_chunk$set(tidy.opts=list(width.cutoff=60),tidy=TRUE)
+```
+
+
+## Problem 1 - Chapter 5, Exercise 3
+
+**Part(a)**
+
+The following function simulates a game of Chevalier de Mere, where you are betting that you get at least one 6 in four throws of a die. The input of the function $x$ is the number of throws (default is 4 for this particular game). The function outputs the outcome of each roll and whether you win or lose.  
+\newln
+```{r}
+CdM <- function(x=4){
+  rolls <- sample(1:6,size=x,replace=TRUE)
+  outcome <- ifelse(6 %in% rolls, "WIN", "LOSE")
+  return(c(rolls,outcome))
+}
+# Examples
+set.seed(12)
+CdM()
+CdM()
+```
+
+\newprob
+
+**Part(b)**
+
+Same function as in Part (a) with only a few minor details changed. By default, n=4, as defined in the argument of the function.  
+\newln
+```{r}
+sixes <- function(n=4){
+  rolls <- sample(1:6,size=n,replace=TRUE)
+  outcome <- ifelse(6 %in% rolls, "WIN", "LOSE")
+  return(c(outcome))
+}
+# Examples
+set.seed(12)
+sixes()
+sixes(7)
+```
+
+\newprob
+
+**Part(c)**
+
+The code below conducts 100 runs for each value of N and takes a summary of the proportions of wins and the differences between the simulated and theoretical probabilities of wins. Looking at the first set of summaries, we see that for N=100 the proportion of wins varies from a minumum of 0.43 to a maximum of 0.64, for N=1000 the proportion of wins varies from a minumum of 0.4810 to a maximum of 0.5630, and for N=10000 the proportion of wins varies from a minumum of 0.5036 to a maximum of 0.5345. We can see that as N increases, the variability in the proportion of wins decreases, since the range of proportions becomes tighter.
+\newln
+Looking at the second set of summaries, we see that the differences between the simulated and theoretical probabilities decrease as N increases from 100 to 10000.
+\newln
+```{r}
+# prop.win() determines the proportion of wins in N simulations of the game.
+prop.win <- function(N, n=4){
+  sim <- replicate(N, sixes())
+  prop.win <- length(sim[sim=="WIN"])/length(sim)
+  theo.win <- 1-(5/6)^n
+  dif <- abs(prop.win-theo.win)
+  return(c(prop.win, theo.win, dif))
+}
+# Conduct 100 runs for each value of N and find the summary of proportions of wins
+runs <- 100
+set.seed(12)
+summary(replicate(runs, prop.win(100))[1,]) # N=100
+summary(replicate(runs, prop.win(1000))[1,]) # N=1000
+summary(replicate(runs, prop.win(10000))[1,]) # N=10000
+# Find the summary of difference between simulation probability and theoretical probability
+set.seed(12)
+summary(replicate(runs, prop.win(100))[3,]) # N=100
+summary(replicate(runs, prop.win(1000))[3,]) # N=1000
+summary(replicate(runs, prop.win(10000))[3,]) # N=10000
+```
+
+\newprob
+
+**Part(d)**
+
+The `write.txt` function below creates a text file with the results of the game for N simulations. You must specify a value N. The `prop` function reads the text file containing the N simulations and calculates the proportion of wins. You must input a file path in quotes if different from `prop("~/Desktop/sixes_sim.txt")`.
+\newln
+```{r}
+# Writes a file
+write.txt <- function(N){
+  write(replicate(N, sixes()),"~/Desktop/sixes_sim.txt")
+}
+# Reads a file and determines proportion of bets won. Must provide the file path/name for the function if different from file="~/Desktop/sixes_sim.txt".
+prop <- function(file="~/Desktop/sixes_sim.txt"){
+  sim <- read.table(file)[,1]
+  prop.win <- length(sim[sim=="WIN"])/length(sim)
+  return(prop.win)
+}
+```
+
+\newpage
+
+## Problem 2 - Chapter 5, Exercise 5
+
+The function `dds` defined below outputs the first $n$ terms in the discrete dynamical system defined by $f$, and then plots them. There are 3 inputs to the function: `x1` is the first value in the system and must be between 0 and 1, `r` is a value to be defined between 0 and 4, and `n` is the number of terms in the system to output.
+\newln
+```{r, fig.width=6, fig.height=6}
+dds <- function(x1, r, n){
+  if(x1 > 1 | x1 < 0){
+    return("Error: x1 must be between 0 and 1")
+  }
+  sequence <- c(x1,rep(NA,n-1))
+  for (i in 2:n) {
+    sequence[i] <- r*sequence[i-1]*(1-sequence[i-1])
+  }
+  plot(1:n,sequence, xlab="n", ylab="x[n]", main=paste("r = ", r, ",", "x1 =", x1))
+  return(sequence)
+}
+# Example with x1=0.6, n=100, and r taking on various values defined in vector below
+r <- c(1.5,2.9,3.1,3.5,3.56,3.57,3.58,3.8,4)
+par(mfrow=c(3,3))
+for (i in r){
+  dds(0.6, i, 100)
+}
+# Example with x1=0.2, n and r remaining unchanged
+par(mfrow=c(3,3))
+for (i in r){
+  dds(0.2, i, 100)
+}
+```
+
+\newpage
+
+## Problem 3
+
+```{r, message=F, warning=F}
+# Histogram using R base graphics
+hist(mtcars$mpg)
+# Histogram using ggplot2
+library(ggplot2)
+ggplot(data=mtcars, aes(x=mpg)) + geom_histogram() + ggtitle("Mtcars mpg")
+```
+
+\newpage
+
+## Problem 4
+
+```{r}
+# Scatterplot using R base graphics
+plot(mtcars$wt, mtcars$mpg, main="Mpg vs. Weight")
+# Scatterplot using ggplot2
+ggplot(data=mtcars,aes(x=wt,y=mpg)) + geom_point() + ggtitle("Mpg vs. Weight")
+```
+
+\newpage
+
+## Problem 5
+
+```{r, message=F, warning=F}
+# Creating the first plot
+mtcars$am <- as.factor(mtcars$am)
+levels(mtcars$am) <- c("Automatic","Manual")
+ggplot(data=mtcars,aes(x=factor(am),y=mpg))+
+  geom_violin(aes(fill=factor(am)))+
+  theme(axis.text.x = element_blank(),
+        axis.ticks=element_blank())+
+  ylab("Miles per Gallon (MPG)")+
+  scale_fill_discrete(name="Type")+
+  scale_x_discrete(name="")+
+  ggtitle("MPG by transmission")
+# Creating the second plot
+library(dplyr)
+ggplot(data=diamonds,aes(x=carat,y=price)) + geom_point() + geom_smooth() + facet_wrap(~cut)
+```
+
+
+
+
+
+
+

@@ -1,0 +1,159 @@
+---
+title: "Exam 1"
+author: "Corey Kuhn"
+date: "3/13/2018"
+output: pdf_document
+---
+
+\newcommand{\newprob}
+    {
+    \vskip 1cm
+    }
+\newcommand{\newln}
+    {
+    \vskip .1cm
+    }
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, echo=FALSE}
+library(knitr)
+opts_chunk$set(tidy.opts=list(width.cutoff=60),tidy=TRUE)
+```
+
+## Problem 1
+
+**Part (a)**  
+
+The function `roll.die()` below generates a random roll of a $p$-sided die, and the default is set to $p=6$ sides.
+
+\newln
+```{r}
+roll.die <- function(p=6){
+  ceiling(p*runif(1))
+}
+```
+
+\newprob
+
+**Part(b)**
+
+The function `roll.risk()` simulates one roll in a game of risk. It's arguments are the number of dice rolled by the attacker and the number of dice rolled by the defender, and the function returns a vector containing the number of armies lost by the attacker and the number of armies lost by the defender.
+\newln
+```{r}
+roll.risk <- function(dice_num_att, dice_num_def){
+  attacker <- sort(replicate(dice_num_att, roll.die()), decreasing=TRUE)
+  defender <- sort(replicate(dice_num_def, roll.die()), decreasing=TRUE)
+  loss_att <- 0
+  loss_def <- 0
+  for(i in 1:min(c(length(attacker), length(defender)))){
+    if(attacker[i] > defender[i]){
+      loss_att <- loss_att + 0
+      loss_def <- loss_def + 1
+    }else{
+      loss_att <- loss_att + 1
+      loss_def <- loss_def + 0
+    }
+  }
+  return(c(loss_att, loss_def))
+}
+```
+
+\newpage
+
+**Part(c)**
+
+The function `battle()` simulates a battle in a game of Risk. Inputs include the number of units for the attacker and the number of units for the defender, while outputs include a list containing who won the battle, the number of rolls it took for the battle to end, and how many units the attacker and the defender have left at the end of the game.
+\newln
+```{r}
+battle <- function(num_units_att, num_units_def){
+  numrolls <- 0
+  while(num_units_att > 1 & num_units_def > 0){
+    if(num_units_att > 3){
+      dice_num_att <- 3
+    }else{
+      dice_num_att <- num_units_att - 1
+    }
+    if(num_units_def < 2){
+      dice_num_def <- 1
+    }else{
+      dice_num_def <- 2
+    }
+    roll <- roll.risk(dice_num_att, dice_num_def)
+    numrolls <- numrolls + 1 # Counts number times through the while loop
+    num_units_att <- num_units_att - roll[1]
+    num_units_def <- num_units_def - roll[2]
+  }
+  winner <- ifelse(num_units_att > num_units_def, "Attacker", "Defender")
+  return(list(winner, numrolls, num_units_att, num_units_def))
+}
+```
+
+\newprob
+
+**Part(d)**
+
+We approximate the probability mass function of the number of units lost by the defending army by simulating a roll in the game of Risk 10,000 times and calculating the proportion of 0, 1, and 2. The table below shows that $P(X = 0) = 0.2869$, $P(X = 1) = 0.3311$, and $P(X = 2) = 0.3820$.
+\newln
+```{r}
+set.seed(123)
+def_loss <- replicate(10000, roll.risk(3,2))[2,]
+prop.table(table(def_loss))
+```
+
+\newpage
+
+**Part(e)**
+
+We find the probability that an attacker wins a battle with a defined number of attacking and defending armies by simulating 10,000 battles and calculating the proportion of battles that the attacker wins. The probability that the attacker wins a battle consisting of 10 attacking armies and 5 defending armies is 0.8729. The probability that the attacker wins a battle consisting of 5 attacking armies and 10 defending armies is 0.
+\newln
+```{r}
+# P(attacker wins battle | 10 attacking armies and 5 defending armies)
+set.seed(123)
+wins <- unlist(replicate(10000, battle(10,5))[1,])
+prop.table(table(wins))
+
+# P(attacker wins battle | 5 attacking armies and 10 defending armies)
+set.seed(123)
+wins <- replicate(10000, battle(5,10))[[1]]
+prop.table(table(wins))
+
+```
+
+\newprob
+
+**Part(f)**
+
+Looking at the plot below, we see that each side needs approximately 10 units in order for the attacker to win about 50% of the time, using 1,000 simulations for each given number of units.
+\newln
+```{r}
+units <- c(2:5,seq(10,100,5))
+prob_att <- rep(NA,length(units))
+set.seed(123)
+for(i in 1:length(units)){
+  wins <- unlist(replicate(1000, battle(units[i],units[i]))[1,])
+  tab <- prop.table(table(wins))
+  prob_att[i] <- as.numeric(tab[1])
+}
+plot(units, prob_att, main="Probability Attacker Wins vs. Number of units", ylab="Probability Attacker Wins", xlab="Number of Units")
+```
+
+\newprob
+
+**Part(g)**
+
+See below for a histogram representing the distribution of the number of rolls required to complete a battle containing 100 attacking armies and 100 defending armies, using 1,000 simulations of the battle. The expected value of the number of rolls required is 91.545, and the standard deviation is 5.396953.
+\newln
+```{r}
+set.seed(123)
+num_rolls <- unlist(replicate(1000, battle(100,100))[2,])
+hist(num_rolls, main="Distribution of the Number of Rolls", xlab="Number of Rolls")
+mean(num_rolls)
+sd(num_rolls)
+```
+
+```{r}
+
+```

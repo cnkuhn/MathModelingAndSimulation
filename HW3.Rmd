@@ -1,0 +1,332 @@
+---
+title: "HW3"
+author: "Corey Kuhn"
+date: "2/19/2018"
+output: pdf_document
+---
+
+\newcommand{\newprob}
+    {
+    \vskip 1cm
+    }
+\newcommand{\newln}
+    {
+    \vskip .1cm
+    }
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, echo=FALSE}
+library(knitr)
+opts_chunk$set(tidy.opts=list(width.cutoff=60),tidy=TRUE)
+```
+
+
+## Problem 1 - Chapter 9, Exercise 1  
+
+The smallest exponent possible is $-(2^{k-1}-1) = -127$, and the largest exponent possible is $2^{k-1} = 128$. Therefore, the smallest number possible in single precision is $2^{-127-(k-1)} = 2^{-127-(23-1)} = \mathbf{2^{-149}}$, while the largest number possible in single precision is $2^{127}(2-2^{-(k+1)}) = 2^{127}(2-2^{-(23+1)}) = \mathbf{2^{127}(2-2^{-24})}$  
+
+In base 10, you get \textbf{8 significant digits} using single precision.
+\newln
+```{r}
+-(2^24-1)
+```
+
+
+\newpage
+
+## Problem 2 - Chapter 9, Exercise 4
+
+To calculate log(1.5) with an error of at most $10^{-16}$, 45 terms are needed in the expansion.  
+
+$log(2) = log(1+1) = 1 - \frac{1}{2} + \frac{1}{3} - \frac{1}{4} + ...$  
+If the last term is equal to 10e-16,  
+$\frac{1}{t} = 10e-16$  
+$t = 1e+15$  
+So, to calculate log(2) with an error of at most $10^{-16}$, 1e+15 terms are needed in the expansion.  
+
+Because so many terms are needed to estimate log(2), it is much more efficient to estimate $log(\sqrt{2})$ and then multiply that by 2, since this only requires 21 terms using the expansion to be within an error of $10^{-16}$.
+\newln
+```{r}
+# log 1.5
+eps <- 10e-16
+x <- 0.5
+n <- 0
+log1x <- 0
+while (n == 0 || abs(last.term) > eps) {
+n <- n + 1
+last.term <- (-1)^(n+1)*x^n/n
+log1x <- log1x + last.term
+}
+n
+# log 2
+last.term <- 1/(10e-16)
+last.term
+# log 2 = 2log(sqrt(2))
+eps <- 10e-10
+x <- sqrt(2)-1
+n <- 0
+log1x <- 0
+while (n == 0 || abs(last.term) > eps) {
+n <- n + 1
+last.term <- 2*(-1)^(n+1)*x^n/n
+log1x <- log1x + last.term
+}
+n
+```
+
+\newpage
+
+## Problem 3 - Chapter 9, Exercise 5
+
+The first equation requires 4n+1 operations, whereas the second equation only requires 3n+5 operations. Therefore, as $n\to\infty$, the second equation is more efficient since it requires less operations. However, catastrophic cancellation occurs with small n. For instance with n=2, the first equation only requires 9 operations while the second equation requires 11 operations. 
+
+\newpage
+
+## Problem 4 - Chapter 9, Exercise 9
+
+The first program uses loops while the second program uses vectors. The time that each program takes is very close, but in general, we can expect loops to take longer than vectorized forms. Thus, if we were working with more complicated, longer vectors $x$ and $y$, we can expect the vectorized program to be faster.
+\newln
+```{r}
+x <- c(1,2,3,4)
+y <- c(5,6,7,8)
+
+# Using loops
+loop.start <- Sys.time()
+n <- length(x)
+z <- rep(NA,2*n)
+xy <- as.list(rep(NA,length(z)))
+for (k in 1:length(z)){
+  for(i in max(c(1,k-n)):min(c(k,n))){
+    xy[[k]][i] <- x[i] * y[k-i+1]
+  }
+  z[k] <- sum(xy[[k]], na.rm=TRUE)
+}
+loop.end <- Sys.time()
+loop.time <- loop.end-loop.start
+
+# Vector operations
+vec.start <- Sys.time()
+n <- length(x)
+z.length <- 2*n
+k <- seq(1:z.length)
+i <- cbind(pmax(1,k-n), pmin(k,n), rep(NA,8))
+colnames(i) <- c("i.from","i.to","z")
+i.range <- mapply(":", i[,1], i[,2])
+xi <- as.list(rep(NA,n))
+yi <- as.list(rep(NA,n))
+z <- as.list(rep(NA,2*n))
+for(i in 1:length(i.range)){
+  xi[[i]] <- x[i.range[[i]]]
+  yi[[i]] <- y[i.range[[i]]]
+  z[[i]] <- xi[[i]]%*%yi[[i]]
+}
+vec.end <- Sys.time()
+vec.time <- vec.end-vec.start
+
+loop.time
+vec.time
+
+```
+
+\newpage
+
+## Problem 5 - Chapter 9, Exercise 10
+
+Below, we first see the average time it takes to run the addition operations after running it 10,000 times. Then we see the average times for running multiplication followed by the time it takes to run a power operation, each also having 10,000 simulations. Each time the code runs, we obtain a different average time. Sometimes on average the multiplication will take the longest and sometimes the power will take the longest, or depending on the run, addition may take longer than the other two operations. This is because the operations running below are very simple, so the computation times are very comparable. However, if we were to run more complicated examples, we would expect to find that addition is quickest and powers take the longest.
+\newln
+```{r}
+# Addition
+start <- rep(NA,10000)
+end <- rep(NA,10000)
+for (i in 1:10000){
+  start[i] <- Sys.time()
+  8000+345+23678+43256+3409+40+494
+  end[i] <- Sys.time()
+  time <- end-start
+}
+mean(time)
+
+# Multiplication
+start1 <- rep(NA,10000)
+end1 <- rep(NA,10000)
+for (i in 1:10000){
+  start1[i] <- Sys.time()
+  23*45*2*13*45*2*32
+  end1[i] <- Sys.time()
+  time1 <- end1-start1
+}
+mean(time1)
+
+# Power
+start2 <- rep(NA,10000)
+end2 <- rep(NA,10000)
+for (i in 1:10000){
+  start2[i] <- Sys.time()
+  652^7
+  end2[i] <- Sys.time()
+  time2 <- end2-start2
+}
+mean(time2)
+
+```
+
+\newpage
+
+## Problem 6 - Chapter 10, Exercise 3
+
+The Newton Raphson method is faster in this scenario since the fixed point method required 53 iterations (0.01660991 seconds) and the Newton Raphson method only needed 4 iterations (0.009315014 seconds).
+\newln
+```{r}
+# Find fixed point of g(x)=cos(x)
+start <- Sys.time()
+library(spuRs)
+ftn <- function(x){ 
+  out <- cos(x)
+  return(out)
+}
+fixedpoint(ftn, x0 = 0, tol = 1e-9, max.iter = 100)
+end <- Sys.time()
+time <- end-start
+
+# Find root of f(x)=cosx-x using Newton Raphson
+start2 <- Sys.time()
+ftn2 <- function(x){ 
+  fx <- cos(x)-x
+  dfx <- -sin(x)-1
+  return(c(fx,dfx))
+}
+x0 <- 0
+newtonraphson(ftn2, x0, tol = 1e-9, max.iter = 100)
+end2 <- Sys.time()
+time2 <- end2-start2
+
+# Compare times
+time
+time2
+
+```
+
+\newpage
+
+## Problem 7 - Chapter 10, Exercise 10
+
+**Part(a)**  
+
+The Newton-Raphson algorithm converged at 3.141593, which is very close to $\pi$. This estimate is correct to 5 decimal places.
+\newln
+```{r}
+s <- function(x){ 
+  sx <- sin(x)
+  dsx <- cos(x)
+  return(c(sx,dsx))
+}
+x0 <- 3
+newtonraphson(s, x0, tol = 1e-9, max.iter = 100)
+```
+
+\newprob
+
+**Part(b)**  
+
+The function looks like sin($x$) for large values of n, as we can see in the plots below. $F_n(x)$ is plotted for values of n ranging from 5 to 20. We can see that this happens when $n\geq10$.
+
+```{r, fig.height=4, fig.width=8}
+fn <- function(x, n){
+  k <- seq(0,n)
+  vec <- rep(NA,length(k))
+  for(i in k){
+    vec[i+1] <- (-1)^i * x^(2*i+1) / factorial(2*i+1)
+  }
+  return(sum(vec))
+}
+x <- seq(0,7,0.1)
+
+# n=5
+f5 <- rep(NA,length(x))
+for (i in 1:length(x)){
+  f5[i] <- fn(x[i],5)
+}
+
+# n=6
+f6 <- rep(NA,length(x))
+for (i in 1:length(x)){
+  f6[i] <- fn(x[i],6)
+}
+
+# n=7
+f7 <- rep(NA,length(x))
+for (i in 1:length(x)){
+  f7[i] <- fn(x[i],7)
+}
+
+# n=8
+f8 <- rep(NA,length(x))
+for (i in 1:length(x)){
+  f8[i] <- fn(x[i],8)
+}
+
+# n=9
+f9 <- rep(NA,length(x))
+for (i in 1:length(x)){
+  f9[i] <- fn(x[i],9)
+}
+
+# n=10
+f10 <- rep(NA,length(x))
+for (i in 1:length(x)){
+  f10[i] <- fn(x[i],10)
+}
+
+# n=20
+f20 <- rep(NA,length(x))
+for (i in 1:length(x)){
+  f20[i] <- fn(x[i],20)
+}
+
+par(mfrow=c(1,2))
+plot(x,f5)
+plot(x,f6)
+plot(x,f7)
+plot(x,f8)
+plot(x,f9)
+plot(x,f10)
+plot(x,f20)
+```
+
+\newprob
+
+**Part(c)**  
+
+Yes, using the Newton-Raphson method, we get an apporximation of $\pi$ that is correct up to 6 decimal places. Another way we could calculate $\pi$ is using the formula for the circumference of a circle: $\pi = \frac{circumference}{diameter}$.
+```{r}
+# Approximate using Newton-Raphson with n=20
+ftn <- function(x){ 
+  # fx
+  k <- seq(0,20)
+  fx.vec <- rep(NA,length(k))
+  for(i in k){
+    fx.vec[i+1] <- (-1)^i * x^(2*i+1) / factorial(2*i+1)
+  }
+  fx <- sum(fx.vec)
+  # dfx
+  dfx.vec <- rep(NA,length(k))
+  for(i in k){
+    dfx.vec[i+1] <- (-1)^i * x^(2*i) / factorial(2*i)
+  }
+  dfx <- sum(dfx.vec)
+  return(c(fx,dfx))
+}
+x0 <- 3
+library(spuRs)
+newtonraphson(ftn, x0, tol = 1e-9, max.iter = 100)
+pi
+```
+
+
+
+
+
+

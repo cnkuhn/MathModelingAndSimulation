@@ -1,0 +1,68 @@
+---
+title: "HW5"
+author: "Corey Kuhn"
+date: "4/24/2018"
+output: pdf_document
+---
+
+\newcommand{\newprob}
+    {
+    \vskip 1cm
+    }
+\newcommand{\newln}
+    {
+    \vskip .1cm
+    }
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, echo=FALSE, warning=FALSE}
+library(knitr)
+opts_chunk$set(tidy.opts=list(width.cutoff=60),tidy=TRUE)
+```
+
+## Problem 1
+
+The function `rand.letter()` returns a randomly chosen letter of the alphabet.
+\newln
+```{r}
+rand.letter <- function(x){
+  let <- sample(letters)[1]
+  return(let)
+}
+```
+
+\newprob
+
+## Problem 2
+
+Running the function 1 million times in parallel take about half the time it takes to run the function 1 million times not in parallel. We see in the below output that it took about 8 seconds to run not in parallel, while it only took about 4 seconds to run in parallel.
+\newln
+```{r}
+# Not in parallel
+start <- Sys.time() 
+out <- replicate(1000000, rand.letter())
+end <- Sys.time()
+end - start # 8.139187
+
+# In parallel
+library(parallel)
+start2 <- Sys.time() 
+out2 <- unlist(mclapply(1:1000000, function(x) {rand.letter(x)}))
+end2 <- Sys.time()
+end2 - start2 # 4.274292
+```
+
+\newprob
+
+## Problem 3 and 4
+
+The link below is a link to my repo on GitHub called `tikitime`, which contains all of the files needed for the package `tikitime` that contains the function `rand.letter()`.  
+\newln
+https://github.com/cnkuhn/tikitime
+
+
+
+

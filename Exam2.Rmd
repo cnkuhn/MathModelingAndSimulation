@@ -1,0 +1,195 @@
+---
+title: "Exam 2"
+author: "Corey Kuhn"
+date: "4/22/2018"
+output: pdf_document
+---
+
+\newcommand{\newprob}
+    {
+    \vskip 1cm
+    }
+\newcommand{\newln}
+    {
+    \vskip .1cm
+    }
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, echo=FALSE, warning=FALSE}
+library(knitr)
+opts_chunk$set(tidy.opts=list(width.cutoff=60),tidy=TRUE)
+```
+
+## Problem 1
+
+The function `randU()` uses the Mersenne-Twister pseudo-random number generator to approximate random draws from a uniform(0,1) distribution. The user must specify `N`, the number of random draws.
+\newln
+```{r}
+randU <- function(N, A = 1664525, B = 1012233904, m = 2^32){
+  rand <- function(N, A = 1664525, B = 1012233904, m = 2^32){ 
+    out <- (A*N + B) %% m
+    return(out)
+  }
+  x <- c()
+  x[1] <- 2 #Seed
+  for (i in 1:N){
+    x[i+1] <- rand(x[i]) 
+  }
+  ret <- x/m
+  return(ret[-1])
+}
+
+```
+
+\newprob
+
+## Problem 2
+
+Using the function `cdf.sim()`, we can randomly sample from a bin(n = 5, p = 0.2) distribution. To illustrate, we randomly sample N=100 from the distribution. Looking at the table in the output, the most commonly occuring value is $x=1$, which is the expected value of a binomial distribution with parameters $n = 5$ and $p = 0.2$.
+\newln
+```{r}
+# Binomial cdf
+binom.cdf <- function(x, n, p){
+  Fx <- 0
+  for(i in 0:x){
+    Fx <- Fx + choose(n, i) * p^i * (1-p)^(n-i)
+  }
+  return(Fx)
+}
+# Returns N random draws from a binomial distribution
+cdf.sim <- function(F, N, ...){
+  X <- rep(0, N)
+  U <- randU(N)
+  binom.draws <- rep(NA, N)
+  for(i in 1:N){
+    while(F(X[i], ...) < U[i]){
+    X[i] <- X[i] + 1
+    }
+    binom.draws[i] <- X[i]
+  }
+  return(binom.draws)
+}
+
+# Randomly sample from binom(n=5, p=0.2) distribution with N=100
+nsims <- 100
+sims <- cdf.sim(binom.cdf, n=5, p=.2, N=nsims)
+table(sims) 
+```
+
+\newprob
+
+## Problem 3
+
+We can use the function `beta.samp()` below to sample from a beta distribution with $\alpha=3$ and $\beta=5$ using the rejection method. The number of draws $n$ must be specified, since it has no default. By default, the upper bound $k$ is set to 2.304527, which is the maximum value of this distribution. The function `beta.samp()` is dependent upon the function `beta.pdf()`.
+\newln
+```{r}
+# PDF of beta distribution
+beta.pdf <- function(x, a=3, b=5){
+  f <- (1/beta(a,b)) * x^(a-1) * (1-x)^(b-1)
+  return(f)
+}
+beta.pdf <- Vectorize(beta.pdf)
+
+# Find max value of beta distribution
+x <- seq(0,1,length.out=100)
+y <- rep(NA,100)
+for(i in 1:length(x)){
+  y[i] <- beta.pdf(x[i])
+}
+max(y) # We will set k = max(y) = 2.304527
+
+# Randomly sample from the beta distribution
+beta.samp <- function(n, k = 2.304527){ #set.seed(4321)
+  U <- randU(10000) # Generate Uniform(0,1) population
+  randsamp <- c()
+  while (length(randsamp) < n){ 
+    x <- sample(U, 1)
+    y <- k * sample(U, 1) # sample from a uniform(0,k)
+    if (y <= beta.pdf(x)){ 
+      randsamp <- c(randsamp,x)
+    } 
+  }
+  return(randsamp) 
+}
+hist(beta.samp(10000)) # 10,000 draws from beta distribution
+```
+
+\newprob
+
+## Problem 4
+
+See the below output for the histograms representing the distributions of the range for each value of m. The expected value of the range when $m=5$, $m=10$, and $m=25$ is 0.3720195, 0.480534, and 0.591403, respectively. 
+\newln
+```{r, cache=TRUE}
+start <- Sys.time() 
+
+# m = 5
+nsims <- 1000
+m <- 5
+set.seed(1234)
+sims <- replicate(nsims, beta.samp(m))
+R <- apply(sims, 2, function(x){max(x) - min(x)})
+hist(R, main = "Distribution of range, m=5")
+(exp_R <- mean(R))
+
+# m = 10
+nsims <- 1000
+m <- 10
+set.seed(1234)
+sims <- replicate(nsims, beta.samp(m))
+R <- apply(sims, 2, function(x){max(x) - min(x)})
+hist(R, main = "Distribution of range, m=10")
+(exp_R <- mean(R))
+
+# m = 25
+nsims <- 1000
+m <- 25
+set.seed(1234)
+sims <- replicate(nsims, beta.samp(m))
+R <- apply(sims, 2, function(x){max(x) - min(x)})
+hist(R, main = "Distribution of range, m=25")
+(exp_R <- mean(R))
+
+end <- Sys.time()
+dif <- end - start
+```
+
+\newprob
+
+## Problem 5
+
+Running the simulations not in parallel takes about 39 seconds, whereas running the simulations in parallel only takes about 25 seconds. We can see that running the simulation in parallel is faster than running the simulation not in parallel.
+\newln
+```{r, cache=TRUE}
+library(parallel)
+start2 <- Sys.time() 
+
+nsims <- 1000
+set.seed(1234)
+sims <- mclapply(c(5,10,25), function(m) {replicate(nsims, beta.samp(m))})
+R <- mclapply(sims, function(sims) apply(sims, 2, function(x) {max(x) - min(x)}))
+(exp_R <- unlist(mclapply(R, function(R) {mean(R)})))
+
+end2 <- Sys.time()
+dif2 <- end2 - start2 
+
+hist(R[[1]], main = "Distribution of range, m=5")
+hist(R[[2]], main = "Distribution of range, m=10")
+hist(R[[3]], main = "Distribution of range, m=25")
+
+dif
+dif2
+```
+
+
+
+
+
+
+
+
+
+
